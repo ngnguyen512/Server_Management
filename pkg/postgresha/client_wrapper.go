@@ -1,10 +1,11 @@
 package postgresha
 
 import (
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 	"log"
 	"time"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type ClientWrapper struct {
@@ -16,6 +17,10 @@ type ClientWrapper struct {
 func NewClientWrapper() *ClientWrapper {
 	connectionString := "host=localhost port=5433 user=postgres dbname=servermanagement sslmode=disable"
 	return &ClientWrapper{connectionString: connectionString}
+}
+func (cw *ClientWrapper) Automigrate(d ...interface{}) error {
+	err := cw.Db().AutoMigrate(d...)
+	return err
 }
 
 // connect uses GORM to open a database connection

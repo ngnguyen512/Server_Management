@@ -1,15 +1,22 @@
 package handler
 
 import (
-	"github.com/google/uuid"
-	"github.com/labstack/echo/v4" // Assuming Echo V4 is used for handling HTTP requests
 	"net/http"
 	"server-management/internal/user" // Adjust according to your project structure
 	"server-management/pkg/repositories"
+
+	"github.com/google/uuid"
+	"github.com/labstack/echo/v4" // Assuming Echo V4 is used for handling HTTP requests
 )
 
 type UserHandler struct {
 	UserRepository repositories.Repository[user.User]
+}
+
+func NewUserHandler(userRepo repositories.Repository[user.User]) *UserHandler {
+	return &UserHandler{
+		UserRepository: userRepo,
+	}
 }
 
 func (h *UserHandler) CreateUser(c echo.Context) error {

@@ -3,17 +3,18 @@ package server
 import (
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type Server struct {
-	ID        uuid.UUID  `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
-	CreatedAt time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP" json:"created_at"`
-	UpdatedAt time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" json:"updated_at"`
-	DeletedAt *time.Time `gorm:"index" json:"deleted_at,omitempty"`
-	CreatedBy string     `gorm:"not null;size:255" json:"created_by"`
-	UpdatedBy string     `gorm:"not null;size:255" json:"updated_by"`
-	DeletedBy string     `gorm:"size:255" json:"deleted_by,omitempty"`
-	Name      string     `gorm:"not null;size:255" json:"name"`
-	IPv4      string     `gorm:"not null;size:15" json:"ipv4"` // Assuming IPv4 standard notation
+	ID        uuid.UUID      `json:"id" gorm:"type:uuid;default:uuid_generate_v4()"`
+	CreatedAt time.Time      `json: "created_at"`
+	UpdatedAt time.Time      `json: "updated_at"`
+	DeletedAt gorm.DeletedAt `json: "deleted_at"`
+	CreatedBy string         `json: "created_by"`
+	UpdatedBy string         `json: "updated_by"`
+	DeletedBy string         `json: "deleted_by"`
+	Name      string         `json: "name"`
+	IPv4      string         `json: "ipv4"`
 }

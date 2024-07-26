@@ -21,7 +21,7 @@ func (r *Repository[T]) FindOneById(id uuid.UUID) (T, error) {
 }
 
 // UpdateOneById updates a single record by ID and returns the updated record.
-func (r *Repository[T]) UpdateOneById(id interface{}, items map[string]interface{}) (T, error) {
+func (r *Repository[T]) UpdateOneById(id uuid.UUID, items map[string]interface{}) (T, error) {
 	var result T
 	err := r.client.Db().Model(&result).Where("id = ?", id).Updates(items).First(&result).Error
 	if err != nil {
@@ -31,7 +31,7 @@ func (r *Repository[T]) UpdateOneById(id interface{}, items map[string]interface
 }
 
 // DeleteOneById deletes a record by its ID.
-func (r *Repository[T]) DeleteOneById(id interface{}) error {
+func (r *Repository[T]) DeleteOneById(id uuid.UUID) error {
 	var instance T
 	result := r.client.Db().Model(&instance).Where("id = ?", id).Delete(&instance)
 	return result.Error
