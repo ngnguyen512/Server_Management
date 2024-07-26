@@ -28,28 +28,30 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.GET("/", handler.HelloWorld)
-
-	e.POST("/users", userHandler.CreateUser)
-	e.GET("/users/:id", userHandler.GetUserById)
-	e.PUT("/users/:id", userHandler.UpdateUser)
-	e.DELETE("/users/:id", userHandler.DeleteUser)
+	g2 := e.Group("/servers")
 
 	serverRepo := postgresha.NewRepository[server.Server](cw)
 	serverHandler := handler.NewServerHandler(serverRepo)
 
-	e.POST("/servers", serverHandler.CreateServer)
-	e.GET("/servers/:id", serverHandler.GetServerById)
-	e.PUT("/servers/:id", serverHandler.UpdateServer)
-	e.DELETE("/servers/:id", serverHandler.DeleteOneById)
+	g2.POST("/servers", serverHandler.CreateServer)
+	g2.GET("/servers/:id", serverHandler.GetServerById)
+	g2.PUT("/servers/:id", serverHandler.UpdateServer)
+	g2.DELETE("/servers/:id", serverHandler.DeleteOneById)
 
 	heathRepo := postgresha.NewRepository[health_event.HealthEvent](cw)
 	healthHandler := handler.NewHealthHandler(heathRepo)
 
-	e.POST("/health-events", healthHandler.CreateHealthEvent)
-	e.GET("/health-events/:id", healthHandler.GetHealthEventById)
-	e.PUT("/health-events/:id", healthHandler.UpdateHealthEvent)
-	e.DELETE("/health-events/:id", healthHandler.DeleteHealthEvent)
+	g1 := e.Group("/health-events")
+	g1.POST("/health-events", healthHandler.CreateHealthEvent)
+	g1.GET("/health-events/:id", healthHandler.GetHealthEventById)
+	g1.PUT("/health-events/:id", healthHandler.UpdateHealthEvent)
+	g1.DELETE("/health-events/:id", healthHandler.DeleteHealthEvent)
+
+	g := e.Group("/users")
+	g.POST("/", userHandler.CreateUser)
+	g.GET("/:id", userHandler.GetUserById)
+	g.PUT("/:id", userHandler.UpdateUser)
+	g.DELETE("/:id", userHandler.DeleteUser)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
