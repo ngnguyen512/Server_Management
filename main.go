@@ -4,6 +4,7 @@ import (
 
 	//_ "github.com/jinzhu/gorm/dialects/postgres"
 	"server-management/internal/handler"
+	"server-management/internal/health_event"
 	"server-management/internal/server"
 	"server-management/internal/user"
 
@@ -18,7 +19,7 @@ func main() {
 	e := echo.New()
 
 	cw := postgresha.NewClientWrapper()
-	cw.Automigrate(&user.User{}, &server.Server{})
+	cw.Automigrate(&user.User{}, &server.Server{}, &health_event.HealthEvent{})
 
 	// userRepo := repositories.NewUserRepository(db)
 	userRepo := postgresha.NewRepository[user.User](cw)
@@ -41,6 +42,14 @@ func main() {
 	e.GET("/servers/:id", serverHandler.GetServerById)
 	e.PUT("/servers/:id", serverHandler.UpdateServer)
 	e.DELETE("/servers/:id", serverHandler.DeleteOneById)
+
+	heathRepo := postgresha.NewRepository[health_event.HealthEvent](cw)
+	healthHandler := handler.NewHealthHandler(heathRepo)
+
+	e.POST("/health-events", healthHandler.CreateHealthEvent)
+	e.GET("/health-events/:id", healthHandler.GetHealthEventById)
+	e.PUT("/health-events/:id", healthHandler.UpdateHealthEvent)
+	e.DELETE("/health-events/:id", healthHandler.DeleteHealthEvent)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
