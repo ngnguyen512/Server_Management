@@ -45,3 +45,8 @@ func (r *Repository[T]) CreateOne(item T) (T, error) {
 	}
 	return item, nil
 }
+func (r *Repository[T]) FindOneByAttribute(field string, value interface{}) (T, error) {
+	var result T
+	err := r.client.Db().Model(&result).Where(field+" = ?", value).First(&result).Error
+	return result, err
+}

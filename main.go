@@ -7,10 +7,14 @@ import (
 	"server-management/internal/health_event"
 	"server-management/internal/server"
 	"server-management/internal/user"
+	"time"
 
 	// "server-management/pkg/repositories"
+	"server-management/pkg/encryptoha"
+	"server-management/pkg/jwtha"
 	"server-management/pkg/postgresha"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -52,6 +56,27 @@ func main() {
 	g.GET("/:id", userHandler.GetUserById)
 	g.PUT("/:id", userHandler.UpdateUser)
 	g.DELETE("/:id", userHandler.DeleteUser)
+	config := encryptoha.Argon2Config{
+		Salt:      []byte("somesalt"),
+		Time:      1,
+		Memory:    64 * 1024,
+		Threads:   4,
+		KeyLength: 32,
+	}
+
+	encryptor := encryptoha.NewArgon2Encryptor(config)
+
+	jwtConfig := jwtha.JwtConfig{
+		SecretKey:     []byte("supersecretkey"),
+		SigningMethod: jwt.SigningMethodHS256,
+		Expiration:    time.Hour,
+	}
+	jwtTokenizer := jwtha.NewJwtTokenizer(jwtConfig)
+
+	authHandler := handler.NewAuthHandler(encryptor, *jwtTokenizer, userRepo)
+	e.POST("/auth/signup", authHandler.SignUp)
+	e.POST("/auth/login", authHandler.Login)
 
 	e.Logger.Fatal(e.Start(":8080"))
+
 }

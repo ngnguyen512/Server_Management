@@ -1,87 +1,82 @@
 package handler
 
 import (
-	"encoding/json"
+	"github.com/labstack/echo/v4"
 	"net/http"
 	"server-management/internal/user"
 	"server-management/pkg/encryptoha"
 	"server-management/pkg/jwtha"
-	"server-management/pkg/repositories"
+	"server-management/pkg/postgresha"
 )
 
 type AuthHandler struct {
 	encryptor      encryptoha.IHashEncryptor
 	jwtTokenizer   jwtha.JwtTokenizer
-	userRepository repositories.Repository[user.User]
+	userRepository *postgresha.Repository[user.User]
 }
 
-func NewAuthHandler(encryptor encryptoha.IHashEncryptor, jwtTokenizer jwtha.JwtTokenizer) *AuthHandler {
+func NewAuthHandler(encryptor encryptoha.IHashEncryptor, jwtTokenizer jwtha.JwtTokenizer, userRepository *postgresha.Repository[user.User]) *AuthHandler {
 	return &AuthHandler{
-		encryptor:    encryptor,
-		jwtTokenizer: jwtTokenizer,
+		encryptor:      encryptor,
+		jwtTokenizer:   jwtTokenizer,
+		userRepository: userRepository,
 	}
 }
 
-func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) SignUp(c echo.Context) error {
 	var req struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-		return
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, "Invalid request payload")
 	}
 
 	hashedPassword, err := h.encryptor.Hash(req.Password)
 	if err != nil {
-		http.Error(w, "Error hashing password", http.StatusInternalServerError)
-		return
+		return c.JSON(http.StatusInternalServerError, "Error hashing password")
 	}
 
-	user := user.User{
+	newUser := user.User{
 		Username: req.Username,
 		Password: hashedPassword,
 	}
 
-	if err := h.userRepository.CreateOne(user); err != nil {
-		http.Error(w, "Error creating user", http.StatusInternalServerError)
-		return
+	createdUser, err := h.userRepository.CreateOne(newUser)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, "Error creating user")
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	return c.JSON(http.StatusCreated, createdUser)
+
 }
 
-func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) Login(c echo.Context) error {
 	var req struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-		return
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, "Invalid request payload")
 	}
 
-	user, err := handler.userRepository.GetUserByUsername(req.Username)
+	foundUser, err := h.userRepository.FindOneByAttribute("username", req.Username)
 	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
+		return c.JSON(http.StatusNotFound, "User not found")
 	}
 
-	match, err := h.encryptor.Compare(user.Password, req.Password)
+	match, err := h.encryptor.Compare(foundUser.Password, req.Password)
 	if err != nil || !match {
-		http.Error(w, "Invalid username or password", http.StatusUnauthorized)
-		return
+		return c.JSON(http.StatusUnauthorized, "Invalid username or password")
 	}
 
-	tokenData := map[string]interface{}{"username": user.Username}
+	tokenData := map[string]interface{}{"username": foundUser.Username}
 	token, err := h.jwtTokenizer.Gencode(tokenData)
 	if err != nil {
-		http.Error(w, "Error generating token", http.StatusInternalServerError)
-		return
+		return c.JSON(http.StatusInternalServerError, "Error generating token")
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"token": token})
+	return c.JSON(http.StatusOK, map[string]string{"token": token})
 }
