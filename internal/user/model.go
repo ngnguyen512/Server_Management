@@ -15,6 +15,6 @@ type User struct {
 	CreatedBy string         `json: "created_by"`
 	UpdatedBy string         `json: "updated_by"`
 	DeletedBy string         `json: "deleted_by"`
-	Username  string         `json: "username"`
-	Password  string         `json: "password"`
+	Username  string         `json: "username" validate:"required"`
+	Password  string         `json: "password" validate:"required"`
 }
