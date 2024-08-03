@@ -1,6 +1,7 @@
 package postgresha
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -8,15 +9,27 @@ import (
 	"gorm.io/gorm"
 )
 
+type Config struct {
+	Host    string
+	Port    int
+	User    string
+	DBName  string
+	SSLMode string
+}
+
 type ClientWrapper struct {
-	connectionString string
-	db               *gorm.DB
+	config *Config
+	db     *gorm.DB
 }
 
 // NewClientWrapper creates a new instance of ClientWrapper
-func NewClientWrapper() *ClientWrapper {
-	connectionString := "host=localhost port=5433 user=postgres dbname=servermanagement sslmode=disable"
-	return &ClientWrapper{connectionString: connectionString}
+func NewClientWrapper(config *Config) *ClientWrapper {
+	return &ClientWrapper{config: config}
+}
+
+func (cw *ClientWrapper) connectionString() string {
+	return fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=%s",
+		cw.config.Host, cw.config.Port, cw.config.User, cw.config.DBName, cw.config.SSLMode)
 }
 func (cw *ClientWrapper) Automigrate(d ...interface{}) error {
 	err := cw.Db().AutoMigrate(d...)
@@ -26,7 +39,7 @@ func (cw *ClientWrapper) Automigrate(d ...interface{}) error {
 // connect uses GORM to open a database connection
 func (cw *ClientWrapper) connect() error {
 	var err error
-	cw.db, err = gorm.Open(postgres.Open(cw.connectionString), &gorm.Config{})
+	cw.db, err = gorm.Open(postgres.Open(cw.connectionString()), &gorm.Config{})
 	if err != nil {
 		return err
 	}
