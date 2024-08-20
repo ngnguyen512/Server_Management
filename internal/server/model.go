@@ -17,4 +17,5 @@ type Server struct {
 	DeletedBy string         `json: "deleted_by"`
 	Name      string         `json: "name"`
 	IPv4      string         `json: "ipv4"`
+	status    string         `json: "status"`
 }

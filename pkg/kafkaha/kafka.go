@@ -12,7 +12,7 @@ type ServerStatus struct {
 }
 
 type ConsumerClientInterface interface {
-	ReadMessage(echo.Context) (kafka.Message, error)
+	ReadMessage(echo.Context) ([]kafka.Message, error)
 	CloseReader() error
 	ReadStruct(echo.Context) ([]string, error)
 }
